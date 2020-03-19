@@ -1,0 +1,28 @@
+kubectl create secret generic android-key --from-file=./my-release-key.jks
+
+kubectl create secret generic pk-android-key --from-file=./new/my-release-key.jks
+Dell@123
+
+tkn t start gradle-build -i=source=gradle-app-res -s=android-key -p=APP_KEY=pk-android-key -p=KS_PASS=******* -n tektoncd
+
+
+
+you need to create secrets and also the srevice account
+
+Key tool to generate the .jsk file
+keytool -genkeypair -v -keystore /home/pradeepkumar/mikdas_android_hellowordl/my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias pradeep -storepass *******  -keypass *******
+
+Full step of the app build and deploy
+
+    Final JSK steps
+        1  keytool -genkeypair -v -keystore my-release-key.jks -keyalg RSA -keysize 2048  -keyalg RSA -keysize 2048 -validity 10000 -alias app
+        2 password
+        3 password
+    Create the service account and a secret
+        First create the kubernetes secret with below command
+        `kubectl create secret generic android-key --from-file=./my-release-key.jks`
+        Than create a service account
+
+        Create the task and the other related resources
+
+        then start the task

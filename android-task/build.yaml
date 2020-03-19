@@ -1,0 +1,67 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: android-build-publish
+spec:
+  inputs:
+    params:
+      - name: APP_KEY
+        description: APP key required to publish
+        type: string
+        default: ""
+      - name: KS_PASS
+        description: KS Pass required to publish
+        type: string
+        default: ""
+    resources:
+    - name: source
+      type: git
+  volumes:
+    - name: android-sec
+      secret:
+        secretName: $(inputs.params.APP_KEY)
+  steps:
+    - name: build
+      image: mpenachayan/android-sdk-gradle
+      volumeMounts:
+        - name: android-sec
+          mountPath: /var/secret
+      workingDir: /workspace/source
+      command:
+        - /bin/bash
+        - -c
+      args:
+        - |-
+          echo "Pradeep"
+          ls
+          echo "Assebmle Release"
+          ./gradlew assembleRelease
+          echo "Aligned the apk"
+          /opt/sdk/build-tools/29.0.2/zipalign -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk my-app-unsigned-aligned.apk
+          ls
+          echo "Signed the apk"
+          /opt/sdk/build-tools/29.0.2/apksigner sign --ks /var/secret/my-release-key.jks --ks-pass pass:$(inputs.params.KS_PASS) --out my-app-release.apk my-app-unsigned-aligned.apk
+          echo "Verify the apk"
+          /opt/sdk/build-tools/29.0.2/apksigner verify my-app-release.apk
+          echo "Final"
+          ls
+          echo "Done"
+      securityContext:
+        privileged: true
+
+    - name: publish
+      image: curlimages/curl
+      workingDir: /workspace/source
+      command:
+        - /bin/sh
+        - -c
+      args:
+        - |-
+          echo "Pradeep publish"
+          ls
+          echo "Ouput apk relsease "
+          ls app/build/outputs/apk/release
+          curl -H "Max-Downloads: 2" -H "Max-Days: 1" --upload-file ./my-app-release.apk https://transfer.sh/my-app-release.apk
+      securityContext:
+        privileged: true
+#           curl -H "Max-Downloads: 2" -H "Max-Days: 1" --upload-file ./pradeep.txt https://transfer.sh/hello.txt
